@@ -1,0 +1,34 @@
+From 4a33c4d33ec14e035b0f1f443f3fb52a70e0d07b Mon Sep 17 00:00:00 2001
+From: Mikko Harju <mikko.harju@jolla.com>
+Date: Thu, 13 Aug 2015 03:09:07 -0400
+Subject: [PATCH] Use gboolean instead of bool
+
+The "use-dbus" is a boolean g_object property, with actual type of
+gboolean, and gboolean is typedef int. g_object_get is a variadic
+function (no static type checking), and stores the queried value
+through pointer-to-int. If sizeof(bool) happens to be less than
+sizeof(int) and the stack variable useDBus is packed tightly,
+this can lead to stack corruption.
+
+Compiling the lib with -fstack-protector immediately pointed out
+the problem.
+---
+ Accounts/manager.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Accounts/manager.cpp b/Accounts/manager.cpp
+index 2eb077f..1ac78d0 100644
+--- a/Accounts/manager.cpp
++++ b/Accounts/manager.cpp
+@@ -530,7 +530,7 @@ bool Manager::abortOnTimeout() const
+  */
+ Manager::Options Manager::options() const
+ {
+-    bool useDBus = true;
++    gboolean useDBus = true;
+     g_object_get(d->m_manager,
+                  "use-dbus", &useDBus,
+                  NULL);
+-- 
+1.8.3-rc3
+
